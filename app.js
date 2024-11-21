@@ -1,26 +1,76 @@
-const fetchAllPokemonImages = async () => {
-  const baseUrl = 'https://pokeapi.co/api/v2/pokemon/';
-  const numberOfPokemon = 151; //! Anzahl der Pokémon der ersten Generation
-  const pokemonImagesContainer = document.getElementById('pokemonImages');
-  pokemonImagesContainer.innerHTML = '';
-  const pokemonData = [];
-  
-  for (let i = 1; i <= numberOfPokemon; i++) {
-    const response = await fetch(`${baseUrl}${i}`);
-    const pokemon = await response.json();
-    pokemonData.push({ name: pokemon.name, imageUrl: pokemon.sprites.front_default });
-    console.log({ name: pokemon.name, imageUrl: pokemon.sprites.front_default });
+const searchButton = document.getElementById("searchButton");
+const searchInput = document.getElementById("searchInput");
+const resultsContainer = document.getElementById("results");
+
+searchButton.addEventListener("click", () => {
+  const query = searchInput.value.trim();
+  if (query === "") {
+    alert("Bitte geben Sie einen Pokemon-Namen ein.");
+    return;
   }
-  
-  //! Sort Pokémon data by name
-  pokemonData.sort((a, b) => a.name.localeCompare(b.name));
-  
-  //! Display sorted Pokémon images
-  pokemonData.forEach(pokemon => {
-    const imgElement = document.createElement('img');
-    imgElement.src = pokemon.imageUrl;
-    imgElement.alt = pokemon.name;
-    pokemonImagesContainer.appendChild(imgElement);
+
+  fetch(`https://pokeapi.co/api/v2/pokemon/${query.toLowerCase()}`)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Pokemon nicht gefunden");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      displayPokemon(data);
+      console.log(data);
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+});
+
+const displayPokemon = (pokemon) => {
+  resultsContainer.innerHTML = "";
+
+  const pokemonCard = document.createElement("div");
+  pokemonCard.className = "pokemon-card";
+
+  const pokemonName = document.createElement("h2");
+  pokemonName.textContent = pokemon.name;
+  pokemonCard.appendChild(pokemonName);
+
+  const pokemonImage = document.createElement("img");
+  pokemonImage.src = pokemon.sprites.front_default;
+  pokemonImage.alt = pokemon.name;
+  pokemonCard.appendChild(pokemonImage);
+
+  const statsHeader = document.createElement("h3");
+  statsHeader.textContent = "Stats";
+  pokemonCard.appendChild(statsHeader);
+
+  const statsList = document.createElement("ul");
+  pokemon.stats.forEach((stat) => {
+    const statItem = document.createElement("li");
+
+    const statName = document.createElement("span");
+    statName.textContent = stat.stat.name;
+
+    const statValue = document.createElement("span");
+    statValue.textContent = stat.base_stat;
+
+    statItem.appendChild(statName);
+    statItem.appendChild(statValue);
+    statsList.appendChild(statItem);
   });
-}
-document.getElementById('fetchButton').addEventListener('click', fetchAllPokemonImages);
+  pokemonCard.appendChild(statsList);
+
+  const abilitiesHeader = document.createElement("h3");
+  abilitiesHeader.textContent = "Abilities";
+  pokemonCard.appendChild(abilitiesHeader);
+
+  const abilitiesList = document.createElement("ul");
+  pokemon.abilities.forEach((ability) => {
+    const abilityItem = document.createElement("li");
+    abilityItem.textContent = ability.ability.name;
+    abilitiesList.appendChild(abilityItem);
+  });
+  pokemonCard.appendChild(abilitiesList);
+
+  resultsContainer.appendChild(pokemonCard);
+};
